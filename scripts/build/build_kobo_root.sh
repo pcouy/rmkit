@@ -37,6 +37,10 @@ tar_files() {
 make_remux_sh() {
   cat > ${PLUGIN_DIR}/bin/remux.sh << REMUX_SH
 #!/bin/sh
+while [ \$(pgrep -f "sh /opt/bin/remux.sh" | wc -l) -gt 2 ]; do
+  kill \$(pgrep -f "sh /opt/bin/remux.sh" | head -n1)
+done
+killall remux
 while true; do
   sleep 1;
   /opt/bin/apps/remux;
