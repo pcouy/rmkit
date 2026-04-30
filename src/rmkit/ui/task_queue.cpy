@@ -31,33 +31,45 @@ namespace ui:
       TaskQueue::wakeup()
 
     static void run_tasks():
+      task_q.lock()
       if TaskQueue::tasks.size() == 0:
+        task_q.unlock()
         return
+      task_q.unlock()
 
 
-      thread *th = nullptr
-      try:
-        th = new thread([=]() {
-          count := 4
-          while tasks.size() > 0 and count > 0:
-            count--
-            task_q.lock()
-            t := TaskQueue::tasks.front()
-            TaskQueue::tasks.pop_front()
-            task_q.unlock()
-
+      if task_m.try_lock():
+        try:
+          std::thread* th = new thread([=]() {
             task_m.lock()
-            t()
+            debug "TASK THREAD STARTED"
+            count := 4
+            while count > 0:
+              count--
+              task_q.lock()
+              if tasks.size() == 0:
+                task_q.unlock()
+                break
+              t := TaskQueue::tasks.front()
+              TaskQueue::tasks.pop_front()
+              task_q.unlock()
+  
+              try:
+                t()
+              catch (const std::exception& e):
+                debug "TASK EXEC EXC", e.what()
+            debug "TASKS DONE"
+            TaskQueue::wakeup()
             task_m.unlock()
+          })
+          th->detach()
+          task_m.unlock()
+        catch (const std::exception& e):
+          debug "NEW THREAD EXC", e.what()
           TaskQueue::wakeup()
-        })
-        th->detach()
-        if th != nullptr
-          delete th
-      catch (const std::exception& e):
-        debug "NEW THREAD EXC", e.what()
-        TaskQueue::wakeup()
-
+      else:
+        debug "TASK QUEUE WAS RUNNING, NOT RELAUNCHING"
+  
 
   // class: ui::TaskQueue
   // The task queue is a way of scheduling tasks from side threads to be run
