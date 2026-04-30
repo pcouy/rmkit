@@ -1,6 +1,6 @@
-FROM ghcr.io/toltec-dev/python:v1.1
+FROM ghcr.io/toltec-dev/python:v4.0
 
-RUN pip3 install okp
+RUN pip3 install --break-system-packages okp
 
 WORKDIR /opt/
 RUN apt update
