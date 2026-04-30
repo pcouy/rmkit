@@ -135,7 +135,7 @@ namespace framebuffer:
     // function: redraw_screen
     // if the framebuffer is dirty, redraws the dirty area
     // of the framebuffer.
-    int redraw_screen(bool full_screen=false):
+    int redraw_screen(bool full_screen=false, bool flash=false):
       if dirty == 0:
         return 0
 
@@ -145,7 +145,10 @@ namespace framebuffer:
       if dirty_area.y1 == 0 || dirty_area.x1 == 0:
         return 0
 
-      return self.perform_redraw(full_screen)
+      return self.perform_redraw(full_screen, flash)
+
+    virtual int perform_redraw(bool, bool):
+      return 0
 
     virtual int perform_redraw(bool):
       return 0
@@ -704,7 +707,7 @@ namespace framebuffer:
 
       return vinfo.xres, vinfo.yres
 
-    int perform_redraw(bool full_screen=false):
+    int perform_redraw(bool full_screen=false, bool flash=false):
       um := 0
       mxcfb_update_data update_data
       mxcfb_rect update_rect
@@ -781,7 +784,7 @@ namespace framebuffer:
     virtual tuple<int,int> get_virtual_size():
       return self.width, self.height
 
-    int perform_redraw(bool):
+    int perform_redraw(bool, bool):
       #ifndef PERF_BUILD
       msync(self.fbmem, self.byte_size, MS_SYNC)
       self.save_png()
@@ -920,8 +923,9 @@ namespace framebuffer:
       mem := (remarkable_color*) fbink_get_fb_pointer(self.fd, &size)
       return mem
 
-    int perform_redraw(bool full_screen=false):
+    int perform_redraw(bool full_screen=false, bool flash=false):
       config_.wfm_mode = self.waveform_mode
+      config_.is_flashing = flash
       if !full_screen:
         fbink_refresh(self.fd,
           dirty_area.y0,
@@ -931,6 +935,7 @@ namespace framebuffer:
           &config_)
       else:
         fbink_refresh(self.fd, 0, 0, self.display_width, self.height, &config_)
+      config_.is_flashing = false
       return 0
 
     void wait_for_redraw(uint32_t update_marker):
@@ -979,7 +984,7 @@ namespace framebuffer:
 
       return vinfo.xres, vinfo.yres
 
-    int perform_redraw(bool full_screen=false):
+    int perform_redraw(bool full_screen=false, bool flash=false):
       um := 0
       hwtcon_update_data update_data
       hwtcon_rect update_rect
