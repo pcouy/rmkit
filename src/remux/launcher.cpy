@@ -31,6 +31,7 @@
 #define DYNAMIC_BPP
 #define HAS_ROTATION
 #define PORTRAIT_ONLY
+#define DRAW_APP_BEHIND_MODAL
 #define USE_GRAYSCALE_32BIT
 #endif
 
@@ -178,7 +179,7 @@ class AppBackground: public ui::Widget:
       fb->set_rotation(vfb->rotation)
     #endif
 
-    fb->perform_redraw(true)
+    fb->perform_redraw(true, true)
     fb->dirty = 1
 
 class AppDialog: public ui::Pager:
