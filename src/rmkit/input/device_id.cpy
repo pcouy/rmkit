@@ -27,7 +27,7 @@
 // event2: gpio keys
 // ev_key: home, left, right, power, wakeup
 namespace input:
-  enum EV_TYPE { TOUCH, STYLUS, BUTTONS, UNKNOWN, INVALID }
+  enum EV_TYPE { TOUCH, STYLUS, BUTTONS, GPIO, UNKNOWN, INVALID }
   static bool check_bit_set(int fd, int type, int i):
     unsigned long bit[NBITS(KEY_MAX)]
     ioctl(fd, EVIOCGBIT(type, KEY_MAX), bit);
@@ -54,6 +54,9 @@ namespace input:
 
     if check_bit_set(fd, EV_KEY, BTN_TOOL_PEN):
       return TOUCH
+
+    if check_bit_set(fd, EV_MSC, MSC_RAW):
+        return GPIO
 
     return UNKNOWN
 

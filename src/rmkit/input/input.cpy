@@ -8,6 +8,7 @@
 
 #include "../defines.h"
 #include "../fb/fb_info.h"
+#include "../shared/proc.h"
 #include "events.h"
 #include "gestures.h"
 #include "device_id.h"
@@ -100,6 +101,7 @@ namespace input:
 
   class Input:
     private:
+    ui::TimerPtr ungrab_interval = nullptr;
 
     public:
     int max_fd
@@ -109,6 +111,7 @@ namespace input:
     InputClass<WacomEvent, SynMotionEvent> wacom
     InputClass<TouchEvent, SynMotionEvent> touch
     InputClass<ButtonEvent, SynKeyEvent> button
+    InputClass<ButtonEvent, SynKeyEvent> gpio
 
     vector<SynMotionEvent> all_motion_events
     vector<SynKeyEvent> all_key_events
@@ -133,6 +136,20 @@ namespace input:
       self.open_device("/dev/input/event2")
       self.open_device("/dev/input/event3")
       self.open_device("/dev/input/event4")
+      self.grab()
+      std::function<void()> ungrab_task = [=]() {
+        debug "UNGRAB_TASK"
+        vector<string> bins = { "nickel" }
+        procs := proc::list_procs(bins)
+        if procs.size() > 0:
+          debug "UNGRABBING"
+          self.ungrab()
+          debug "UNGRABBED"
+          ui::cancel_timer(ungrab_interval)
+        else:
+          debug "RESCHEDULING"
+      }
+      ungrab_interval = ui::set_interval(ungrab_task, 500)
       #else
       if USE_RESIM:
         debug "MONITORING RESIM"
@@ -155,7 +172,7 @@ namespace input:
       return
 
     void close_devices():
-      vector<IInputClass> fds = { self.touch, self.wacom, self.button}
+      vector<IInputClass> fds = { self.touch, self.wacom, self.button, self.gpio}
       for auto in : fds:
         if in.fd > 0:
           close(in.fd)
@@ -182,6 +199,10 @@ namespace input:
         case TOUCH:
           self.touch.set_fd(fd)
           debug "AS TOUCH"
+          break
+        case GPIO:
+          debug ": GPIO"
+          self.gpio.set_fd(fd)
           break
         case INVALID:
         case UNKNOWN:
@@ -252,17 +273,11 @@ namespace input:
       return
 
     void grab():
-      #ifndef REMARKABLE
-      return
-      #endif
-      for auto fd : { self.touch.fd, self.wacom.fd, self.button.fd }:
+      for auto fd : { self.touch.fd, self.wacom.fd, self.button.fd, self.gpio.fd }:
         ioctl(fd, EVIOCGRAB, true)
 
     void ungrab():
-      #ifndef REMARKABLE
-      return
-      #endif
-      for auto fd : { self.touch.fd, self.wacom.fd, self.button.fd }:
+      for auto fd : { self.touch.fd, self.wacom.fd, self.button.fd, self.gpio.fd }:
         ioctl(fd, EVIOCGRAB, false)
 
     void check_reopen():
