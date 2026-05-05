@@ -32,6 +32,7 @@
 #define HAS_ROTATION
 #define PORTRAIT_ONLY
 #define DRAW_APP_BEHIND_MODAL
+#define GRAB_INPUT
 #define USE_GRAYSCALE_32BIT
 #endif
 
@@ -348,8 +349,7 @@ class App: public IApp:
       ui::set_timeout([=]() {
         ui::MainLoop::in.unmonitor(ui::MainLoop::in.wacom.fd)
       }, 10)
-      if USE_KOREADER_WORKAROUND and CURRENT_APP != "KOReader":
-        ui::MainLoop::in.ungrab()
+      ui::MainLoop::in.ungrab()
     ;
 
     app_bg = new AppBackground(0, 0, w, h)
