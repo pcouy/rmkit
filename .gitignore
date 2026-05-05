@@ -6,6 +6,7 @@ fb.pnm
 fb.raw
 screen.*
 output
+kobo/
 tags
 tmp
 *.o
